@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>html { zoom: 1.2; }</style>
+<title>CASH EMPIRE</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+:root {
+  --green: #00ff41;
+  --dark-green: #00aa2a;
+  --mid-green: #007a1e;
+  --dim-green: #003b0f;
+  --gold: #ffd700;
+  --gold-dark: #b89a00;
+  --amber: #ff8c00;
+  --red: #ff3333;
+  --blue: #00cfff;
+  --purple: #bb88ff;
+  --bg: #080808;
+  --felt: #0a1f0a;
+  --felt2: #0d280d;
+  --panel: #0f0f0f;
+  --panel2: #151515;
+  --border: #1a3a1a;
+  --text: #c8ffc8;
+  --dim: #4a7a4a;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--green);
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-image: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,65,0.012) 2px, rgba(0,255,65,0.012) 4px);
+}
+body::before {
+  content:''; position:fixed; inset:0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px);
+  pointer-events:none; z-index:999;
+}
+body::after {
+  content:''; position:fixed; inset:0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(0,255,65,0.05) 0%, transparent 65%);
+  pointer-events:none; z-index:0;
+}
+
+/* ── HEADER ── */
+#header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:11px 20px; border-bottom:2px solid var(--border);
+  background:#0a0f0a; position:relative; z-index:10; gap:16px;
+}
+#header-title {
+  font-family:'Press Start 2P',monospace; font-size:15px;
+  color:var(--gold); text-shadow:0 0 18px var(--gold),0 0 36px rgba(255,215,0,0.3);
+  white-space:nowrap; display:flex; align-items:center; gap:10px;
+}
+#money-display {
+  font-family:'Press Start 2P',monospace; font-size:21px;
+  color:var(--gold); text-shadow:0 0 12px var(--gold); letter-spacing:1px;
+}
+#header-stats { font-size:15px; color:var(--dim); text-align:right; line-height:1.6; }
+
+/* ── LAYOUT ── */
+#main {
+  display:grid; grid-template-columns:210px 1fr 255px;
+  height:calc(100vh - 76px); position:relative; z-index:1;
+}
+
+/* ── LEFT ── */
+#left-panel {
+  border-right:2px solid var(--border); overflow-y:auto;
+  padding:14px; background:var(--panel); display:flex; flex-direction:column; gap:12px;
+}
+#click-area { text-align:center; }
+#money-btn {
+  background:none; border:2px solid var(--gold); color:var(--gold);
+  width:118px; height:118px; border-radius:50%; cursor:pointer;
+  transition:transform 0.07s,box-shadow 0.1s;
+  box-shadow:0 0 18px rgba(255,215,0,0.25),inset 0 0 18px rgba(255,215,0,0.04);
+  display:flex; align-items:center; justify-content:center; margin:0 auto 8px;
+}
+#money-btn i { font-size:42px; pointer-events:none; }
+#money-btn:hover { box-shadow:0 0 32px rgba(255,215,0,0.55),inset 0 0 28px rgba(255,215,0,0.09); }
+#money-btn:active { transform:scale(0.92); }
+#click-value { font-size:14px; color:var(--dim); }
+
+.section-title {
+  font-family:'Press Start 2P',monospace; font-size:8px;
+  color:var(--green); text-shadow:0 0 6px var(--green);
+  letter-spacing:1px; padding-bottom:6px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; gap:8px;
+}
+
+.upgrade-item {
+  background:var(--panel2); border:1px solid var(--border); border-radius:3px;
+  padding:7px 9px; cursor:pointer; transition:border-color 0.15s,background 0.15s;
+  display:flex; justify-content:space-between; align-items:center; gap:8px;
+}
+.upgrade-item:hover:not(.unaffordable) { border-color:var(--green); background:#162016; }
+.upgrade-item.unaffordable { opacity:0.38; cursor:default; }
+.upg-left { flex:1; min-width:0; }
+.upg-name { font-size:13px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.upg-desc { font-size:12px; color:var(--dim); }
+.upg-owned { font-size:11px; color:var(--dark-green); }
+.upg-cost { font-size:13px; color:var(--gold); white-space:nowrap; }
+
+/* ── CENTER ── */
+#center-panel { overflow-y:auto; background:var(--bg); display:flex; flex-direction:column; }
+#tabs {
+  display:flex; border-bottom:2px solid var(--border); background:var(--panel);
+  position:sticky; top:0; z-index:5;
+}
+.tab-btn {
+  font-family:'Press Start 2P',monospace; font-size:7px; background:none; border:none;
+  border-right:1px solid var(--border); color:var(--dim); padding:10px 13px; cursor:pointer;
+  transition:color 0.15s,background 0.15s; display:flex; align-items:center; gap:6px;
+}
+.tab-btn i { font-size:12px; }
+.tab-btn:hover { color:var(--green); background:#141f14; }
+.tab-btn.active { color:var(--gold); background:#0d160d; border-bottom:2px solid var(--gold); margin-bottom:-2px; }
+.tab-content { display:none; padding:16px; flex:1; }
+.tab-content.active { display:block; }
+
+/* ── ASSETS ── */
+.asset-grid { display:grid; grid-template-columns:1fr 1fr; gap:9px; }
+.asset-card {
+  background:var(--panel2); border:1px solid var(--border); border-radius:4px;
+  padding:11px; cursor:pointer; transition:border-color 0.15s,background 0.15s;
+}
+.asset-card:hover:not(.unaffordable) { border-color:var(--green); background:#141f14; }
+.asset-card.unaffordable { opacity:0.4; cursor:default; }
+.asset-icon { font-size:22px; color:var(--gold); margin-bottom:5px; }
+.asset-name { font-family:'Press Start 2P',monospace; font-size:7px; color:var(--text); margin-bottom:4px; }
+.asset-income { font-size:13px; color:var(--dark-green); }
+.asset-cost { font-size:13px; color:var(--gold); }
+.asset-owned-count { font-size:12px; color:var(--blue); }
+
+/* ── STOCKS ── */
+.stock-row {
+  background:var(--panel2); border:1px solid var(--border); border-radius:4px;
+  padding:10px 12px; margin-bottom:8px;
+}
+.stock-top {
+  display:grid; grid-template-columns:110px 1fr 90px 90px; align-items:center; gap:8px; margin-bottom:8px;
+}
+.stock-ticker { font-family:'Press Start 2P',monospace; font-size:8px; color:var(--gold); }
+.stock-company { font-size:12px; color:var(--dim); margin-top:2px; }
+.stock-chart-mini { height:32px; width:100%; }
+.stock-price { font-size:15px; }
+.stock-change.up { color:#00cc33; }
+.stock-change.down { color:var(--red); }
+.stock-holding { font-size:12px; color:var(--blue); }
+
+/* Stock invest row */
+.stock-invest-row {
+  display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding-top:8px; border-top:1px solid var(--border);
+}
+.stock-invest-row label {
+  font-family:'Press Start 2P',monospace; font-size:7px; color:var(--dim); white-space:nowrap;
+}
+.stock-presets { display:flex; gap:4px; flex-wrap:wrap; }
+.preset-btn {
+  font-family:'VT323',monospace; font-size:14px; background:#181818;
+  border:1px solid var(--border); color:var(--green); padding:2px 7px;
+  border-radius:3px; cursor:pointer; transition:border-color 0.1s,color 0.1s;
+}
+.preset-btn:hover { border-color:var(--green); color:#fff; }
+.stock-btn {
+  font-family:'Press Start 2P',monospace; font-size:6px; padding:5px 9px;
+  border-radius:3px; border:none; cursor:pointer;
+  display:inline-flex; align-items:center; gap:5px; transition:opacity 0.15s;
+}
+.stock-btn:hover { opacity:0.8; }
+.stock-btn i { font-size:9px; }
+.buy-btn  { background:#005500; color:#00ff41; border:1px solid #00aa22; }
+.sell-btn { background:#440000; color:#ff4444; border:1px solid #aa0000; }
+
+/* ── STYLED NUMBER INPUT ── */
+.retro-num-wrap {
+  position:relative; display:inline-flex; align-items:center;
+  background:#080808; border:1px solid var(--gold); border-radius:3px; overflow:hidden;
+}
+.retro-num-wrap input[type=number] {
+  background:transparent; border:none; outline:none;
+  color:var(--gold); font-family:'VT323',monospace; font-size:18px;
+  padding:4px 4px 4px 8px; width:90px;
+  -moz-appearance:textfield;
+}
+.retro-num-wrap input[type=number]::-webkit-inner-spin-button,
+.retro-num-wrap input[type=number]::-webkit-outer-spin-button { -webkit-appearance:none; }
+.retro-arrows {
+  display:flex; flex-direction:column; border-left:1px solid var(--gold);
+}
+.retro-arrows button {
+  background:none; border:none; color:var(--gold); cursor:pointer;
+  font-size:10px; padding:2px 7px; line-height:1;
+  transition:background 0.1s,color 0.1s; font-family:'Press Start 2P',monospace;
+}
+.retro-arrows button:hover { background:var(--gold); color:#000; }
+.retro-arrows button:first-child { border-bottom:1px solid var(--gold); }
+
+/* ── GAMBLING ── */
+#gambling-panel { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+.gamble-card {
+  background:var(--panel2); border:1px solid var(--border); border-radius:4px; padding:13px;
+}
+.gamble-title {
+  font-family:'Press Start 2P',monospace; font-size:8px; color:var(--amber);
+  text-shadow:0 0 8px var(--amber); margin-bottom:10px;
+  display:flex; align-items:center; gap:8px;
+}
+.gamble-title i { font-size:14px; }
+
+.bet-row { display:flex; gap:7px; align-items:center; margin-bottom:9px; flex-wrap:wrap; }
+.bet-presets { display:flex; gap:4px; flex-wrap:wrap; }
+
+.action-btn {
+  font-family:'Press Start 2P',monospace; font-size:7px; padding:7px 10px;
+  border-radius:3px; border:none; cursor:pointer; transition:transform 0.08s,opacity 0.15s;
+  margin-right:5px; margin-bottom:5px; display:inline-flex; align-items:center; gap:6px;
+}
+.action-btn i { font-size:10px; }
+.action-btn:hover { opacity:0.82; }
+.action-btn:active { transform:scale(0.95); }
+.btn-green  { background:#004400; color:#00ff41; border:1px solid #006600; }
+.btn-red    { background:#440000; color:#ff5555; border:1px solid #880000; }
+.btn-amber  { background:#3a2000; color:var(--amber); border:1px solid #664400; }
+.btn-blue   { background:#002244; color:var(--blue); border:1px solid #004488; }
+.btn-purple { background:#220044; color:var(--purple); border:1px solid #550088; }
+
+.result-msg { font-size:15px; min-height:20px; margin-top:6px; }
+.win-msg  { color:#00cc33; }
+.lose-msg { color:var(--red); }
+.push-msg { color:var(--amber); }
+
+/* ── SLOTS ── */
+#slot-reels { display:flex; gap:8px; justify-content:center; margin:8px 0; }
+.reel {
+  width:52px; height:52px; background:#080808; border:2px solid var(--border);
+  border-radius:4px; display:flex; align-items:center; justify-content:center;
+  font-size:26px; color:var(--gold);
+}
+.reel i { font-size:26px; }
+.reel.spinning { animation:reel-shake 0.09s linear infinite; }
+@keyframes reel-shake { 0%{transform:translateY(-2px)} 50%{transform:translateY(2px)} 100%{transform:translateY(-2px)} }
+
+/* ── COIN FLIP ── */
+#coin-display { font-size:48px; color:var(--gold); text-align:center; margin:8px 0; }
+
+/* ════════════════════════════════
+   BLACKJACK — pixel casino style
+   ════════════════════════════════ */
+#bj-panel {
+  grid-column:span 2;
+  background:var(--felt);
+  border:3px solid var(--gold);
+  border-radius:4px;
+  padding:14px;
+  position:relative;
+  box-shadow:0 0 24px rgba(0,255,65,0.15), inset 0 0 40px rgba(0,0,0,0.5);
+  image-rendering:pixelated;
+}
+/* felt texture */
+#bj-panel::before {
+  content:''; position:absolute; inset:3px; pointer-events:none;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(0,255,65,0.015) 0px, transparent 1px, transparent 6px),
+    repeating-linear-gradient(-45deg, rgba(0,255,65,0.015) 0px, transparent 1px, transparent 6px);
+}
+#bj-panel.win-flash { animation:bj-flash 0.3s steps(2) 4; }
+@keyframes bj-flash { 0%{border-color:var(--gold)} 50%{border-color:#00ff41} 100%{border-color:var(--gold)} }
+
+.bj-title {
+  font-family:'Press Start 2P',monospace; font-size:9px; color:var(--green);
+  text-shadow:0 0 8px var(--green); margin-bottom:12px;
+  display:flex; align-items:center; gap:8px;
+}
+.bj-title i { font-size:13px; }
+
+.bj-status-row {
+  display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;
+}
+.bj-stat {
+  border:2px solid var(--gold); background:#000; padding:5px 10px; text-align:center;
+  box-shadow:0 0 8px var(--gold-dark);
+}
+.bj-stat .bj-stat-label { font-family:'Press Start 2P',monospace; font-size:6px; color:var(--dark-green); margin-bottom:4px; }
+.bj-stat .bj-stat-val   { font-family:'Press Start 2P',monospace; font-size:11px; color:var(--gold); }
+
+.bj-zone-label {
+  font-family:'Press Start 2P',monospace; font-size:7px; color:var(--mid-green);
+  letter-spacing:3px; margin-bottom:8px; text-align:center;
+}
+.bj-score-display {
+  font-family:'Press Start 2P',monospace; font-size:8px; color:var(--green);
+  margin-bottom:8px; text-align:center; min-height:14px;
+}
+.bj-hand-area {
+  min-height:100px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+  padding:8px; margin-bottom:8px; border:2px dashed var(--dim-green); position:relative;
+}
+.bj-divider {
+  border:none; border-top:2px solid var(--gold); margin:6px 0;
+  box-shadow:0 0 6px var(--gold-dark);
+}
+#bj-message {
+  font-family:'Press Start 2P',monospace; font-size:9px; text-align:center;
+  padding:8px; min-height:30px; margin:8px 0; border:1px solid transparent;
+}
+#bj-message.info  { color:var(--green); border-color:var(--mid-green); background:rgba(0,255,65,0.04); }
+#bj-message.win   { color:var(--gold);  border-color:var(--gold); background:rgba(255,215,0,0.06); text-shadow:0 0 10px var(--gold); }
+#bj-message.lose  { color:var(--red);   border-color:#660000; background:rgba(255,0,0,0.05); }
+#bj-message.push  { color:var(--amber); border-color:#664400; background:rgba(255,140,0,0.05); }
+
+/* pixel cards */
+.bj-card {
+  width:58px; height:82px; border:3px solid var(--gold); background:#000;
+  display:flex; flex-direction:column; justify-content:space-between;
+  padding:4px; position:relative; flex-shrink:0;
+  animation:cardDeal 0.15s steps(4) both;
+  box-shadow:3px 3px 0 var(--gold-dark),0 0 10px rgba(0,255,65,0.15);
+  image-rendering:pixelated;
+}
+@keyframes cardDeal {
+  from { transform:translateY(-18px) scale(0.5); opacity:0; }
+  to   { transform:translateY(0) scale(1); opacity:1; }
+}
+.bj-card.hidden {
+  background:repeating-linear-gradient(45deg, var(--dim-green), var(--dim-green) 4px, #000 4px, #000 8px);
+  border-color:var(--gold);
+}
+.bj-card.hidden::after {
+  content:'?'; position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Press Start 2P',monospace; font-size:20px;
+  color:var(--gold); text-shadow:0 0 10px var(--gold);
+}
+.bj-card .bj-corner { font-family:serif; font-size:10px; line-height:1.2; font-weight:700; }
+.bj-card .bj-corner.tl { align-self:flex-start; }
+.bj-card .bj-corner.br { align-self:flex-end; transform:rotate(180deg); }
+.bj-card .bj-suit-center {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  font-size:20px; line-height:1;
+}
+.bj-card.red .bj-corner,.bj-card.red .bj-suit-center { color:#ff3333; }
+.bj-card.black .bj-corner,.bj-card.black .bj-suit-center { color:var(--green); }
+
+/* bj bet chips */
+.bj-bet-section {
+  border:2px solid var(--mid-green); background:#000;
+  padding:9px 12px; display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin-bottom:10px;
+}
+.bj-bet-section .bj-bet-label { font-family:'Press Start 2P',monospace; font-size:7px; color:var(--dark-green); }
+.bj-bet-val { font-family:'Press Start 2P',monospace; font-size:13px; color:var(--gold); min-width:55px; text-align:center; }
+
+.chip-btn {
+  font-family:'Press Start 2P',monospace; font-size:7px; cursor:pointer;
+  border-radius:50%; width:36px; height:36px; border:3px solid;
+  display:flex; align-items:center; justify-content:center;
+  transition:transform 0.08s,box-shadow 0.08s;
+  box-shadow:2px 2px 0;
+}
+.chip-btn:hover:not(:disabled) { transform:translateY(-2px); }
+.chip-btn:active:not(:disabled) { transform:translate(2px,2px); box-shadow:0 0 0; }
+.chip-btn:disabled { opacity:0.25; cursor:not-allowed; }
+.c5   { background:#003300; border-color:#00aa22; color:#00ff41; box-shadow-color:#006600; }
+.c10  { background:#003366; border-color:#0066cc; color:#66aaff; }
+.c25  { background:#330066; border-color:#9933cc; color:#cc88ff; }
+.c50  { background:#660000; border-color:#cc2200; color:#ff6644; }
+.c100 { background:#4a3a00; border-color:#cc9900; color:var(--gold); }
+.c500 { background:#1a0033; border-color:#8800cc; color:#dd66ff; }
+
+/* bj action buttons — pixel style */
+.bj-btn {
+  font-family:'Press Start 2P',monospace; font-size:9px; padding:9px 16px;
+  cursor:pointer; border:3px solid var(--gold); background:#000; color:var(--gold);
+  position:relative; outline:none; letter-spacing:1px;
+  box-shadow:3px 3px 0 var(--gold-dark),0 0 10px rgba(255,215,0,0.15);
+  text-transform:uppercase; transition:none; display:inline-flex; align-items:center; gap:6px;
+}
+.bj-btn i { font-size:11px; }
+.bj-btn:hover:not(:disabled) { background:var(--gold); color:#000; box-shadow:5px 5px 0 var(--gold-dark),0 0 20px var(--gold); }
+.bj-btn:active:not(:disabled) { transform:translate(3px,3px); box-shadow:0 0 0; }
+.bj-btn:disabled { opacity:0.28; cursor:not-allowed; border-color:var(--dim-green); color:var(--dim-green); box-shadow:none; }
+.bj-btn.green-btn { border-color:var(--green); color:var(--green); box-shadow:3px 3px 0 var(--dim-green),0 0 10px rgba(0,255,65,0.2); }
+.bj-btn.green-btn:hover:not(:disabled) { background:var(--green); color:#000; box-shadow:5px 5px 0 var(--dim-green),0 0 20px var(--green); }
+.bj-btn.red-btn { border-color:var(--red); color:var(--red); box-shadow:3px 3px 0 #660000; }
+.bj-btn.red-btn:hover:not(:disabled) { background:var(--red); color:#000; }
+.bj-btn.purple-btn { border-color:var(--purple); color:var(--purple); box-shadow:3px 3px 0 #440066; }
+.bj-btn.purple-btn:hover:not(:disabled) { background:var(--purple); color:#000; }
+
+.bj-controls { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+.bj-pixel-footer {
+  font-family:'Press Start 2P',monospace; font-size:6px; color:var(--mid-green);
+  text-align:center; margin-top:10px; letter-spacing:2px;
+}
+
+/* ── RIGHT ── */
+#right-panel {
+  border-left:2px solid var(--border); overflow-y:auto;
+  padding:14px; background:var(--panel);
+}
+.port-section { margin-bottom:14px; }
+.port-row {
+  display:flex; justify-content:space-between; padding:4px 0;
+  border-bottom:1px solid #131913; font-size:14px;
+}
+.port-label { color:var(--dim); display:flex; align-items:center; gap:6px; }
+.port-label i { font-size:11px; width:14px; text-align:center; }
+.port-value { color:var(--text); }
+
+#log {
+  font-size:13px; max-height:150px; overflow-y:auto;
+  background:#050505; border:1px solid var(--border); border-radius:3px; padding:6px;
+}
+.log-entry { color:var(--dim); padding:2px 0; border-bottom:1px solid #0e0e0e; display:flex; align-items:center; gap:5px; font-size:13px; }
+.log-entry i { font-size:10px; flex-shrink:0; }
+.log-entry.good { color:var(--dark-green); }
+.log-entry.bad  { color:#cc2222; }
+.log-entry.info { color:var(--blue); }
+
+/* float coin */
+.float-coin {
+  position:fixed; font-family:'VT323',monospace; font-size:19px; color:var(--gold);
+  pointer-events:none; animation:float-up 0.9s ease-out forwards;
+  z-index:1000; text-shadow:0 0 8px var(--gold); display:flex; align-items:center; gap:4px;
+}
+.float-coin i { font-size:14px; }
+@keyframes float-up { 0%{opacity:1;transform:translateY(0) scale(1)} 100%{opacity:0;transform:translateY(-65px) scale(1.25)} }
+
+::-webkit-scrollbar { width:5px; }
+::-webkit-scrollbar-track { background:#080808; }
+::-webkit-scrollbar-thumb { background:#1a3a1a; border-radius:3px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="header">
+  <div id="header-title"><i class="fa-solid fa-building-columns"></i> CASH EMPIRE</div>
+  <div id="money-display">$0.00</div>
+  <div id="header-stats">
+    <div id="per-second-display">$0.00 / sec</div>
+    <div id="total-earned-display" style="font-size:13px">Total: $0.00</div>
+  </div>
+</div>
+
+<div id="main">
+
+  <!-- LEFT -->
+  <div id="left-panel">
+    <div id="click-area">
+      <button id="money-btn" onclick="clickMoney(event)"><i class="fa-solid fa-dollar-sign"></i></button>
+      <div id="click-value"><i class="fa-solid fa-hand-pointer" style="font-size:11px;margin-right:4px"></i>+$1.00 per click</div>
+    </div>
+    <div class="section-title"><i class="fa-solid fa-arrow-trend-up"></i> UPGRADES</div>
+    <div id="upgrades-list"></div>
+  </div>
+
+  <!-- CENTER -->
+  <div id="center-panel">
+    <div id="tabs">
+      <button class="tab-btn active" onclick="switchTab('assets',this)"><i class="fa-solid fa-city"></i> ASSETS</button>
+      <button class="tab-btn" onclick="switchTab('stocks',this)"><i class="fa-solid fa-chart-line"></i> STOCKS</button>
+      <button class="tab-btn" onclick="switchTab('gambling',this)"><i class="fa-solid fa-dice"></i> CASINO</button>
+    </div>
+
+    <!-- ASSETS -->
+    <div id="tab-assets" class="tab-content active">
+      <div class="section-title" style="margin-bottom:12px"><i class="fa-solid fa-building"></i> PROPERTY &amp; ASSETS</div>
+      <div class="asset-grid" id="assets-grid"></div>
+    </div>
+
+    <!-- STOCKS -->
+    <div id="tab-stocks" class="tab-content">
+      <div class="section-title" style="margin-bottom:12px"><i class="fa-solid fa-chart-candlestick"></i> STOCK MARKET</div>
+      <div id="stocks-panel"></div>
+    </div>
+
+    <!-- GAMBLING -->
+    <div id="tab-gambling" class="tab-content">
+      <div id="gambling-panel">
+
+        <!-- SLOTS -->
+        <div class="gamble-card">
+          <div class="gamble-title"><i class="fa-solid fa-slot-machine"></i> SLOT MACHINE</div>
+          <div id="slot-reels">
+            <div class="reel" id="r1"><i class="fa-solid fa-cherry"></i></div>
+            <div class="reel" id="r2"><i class="fa-solid fa-lemon"></i></div>
+            <div class="reel" id="r3"><i class="fa-solid fa-bell"></i></div>
+          </div>
+          <div class="bet-row">
+            <div class="retro-num-wrap">
+              <input type="number" id="slot-bet" value="10" min="1">
+              <div class="retro-arrows">
+                <button onclick="stepInput('slot-bet',10)">▲</button>
+                <button onclick="stepInput('slot-bet',-10)">▼</button>
+              </div>
+            </div>
+            <div class="bet-presets">
+              <button class="preset-btn" onclick="setVal('slot-bet',10)">$10</button>
+              <button class="preset-btn" onclick="setVal('slot-bet',50)">$50</button>
+              <button class="preset-btn" onclick="setVal('slot-bet',100)">$100</button>
+              <button class="preset-btn" onclick="setVal('slot-bet',500)">$500</button>
+            </div>
+          </div>
+          <button class="action-btn btn-amber" onclick="spinSlots()"><i class="fa-solid fa-rotate"></i> SPIN!</button>
+          <div id="slot-result" class="result-msg push-msg"></div>
+        </div>
+
+        <!-- COIN FLIP -->
+        <div class="gamble-card">
+          <div class="gamble-title"><i class="fa-solid fa-coins"></i> COIN FLIP</div>
+          <div id="coin-display"><i class="fa-solid fa-circle-dollar-to-slot"></i></div>
+          <div class="bet-row">
+            <div class="retro-num-wrap">
+              <input type="number" id="coin-bet" value="10" min="1">
+              <div class="retro-arrows">
+                <button onclick="stepInput('coin-bet',10)">▲</button>
+                <button onclick="stepInput('coin-bet',-10)">▼</button>
+              </div>
+            </div>
+            <div class="bet-presets">
+              <button class="preset-btn" onclick="setVal('coin-bet',10)">$10</button>
+              <button class="preset-btn" onclick="setVal('coin-bet',50)">$50</button>
+              <button class="preset-btn" onclick="setVal('coin-bet',100)">$100</button>
+            </div>
+          </div>
+          <button class="action-btn btn-green" onclick="flipCoin('heads')"><i class="fa-solid fa-h"></i> HEADS</button>
+          <button class="action-btn btn-red"   onclick="flipCoin('tails')"><i class="fa-solid fa-t"></i> TAILS</button>
+          <div id="coin-result" class="result-msg"></div>
+        </div>
+
+        <!-- BLACKJACK — full pixel casino style -->
+        <div id="bj-panel">
+          <div class="bj-title"><i class="fa-solid fa-cards"></i> BLACKJACK &mdash; DEALER STANDS ON 17</div>
+
+          <div class="bj-status-row">
+            <div class="bj-stat">
+              <div class="bj-stat-label">BET</div>
+              <div class="bj-stat-val" id="bj-bet-display">$0</div>
+            </div>
+            <div class="bj-stat">
+              <div class="bj-stat-label">WINS</div>
+              <div class="bj-stat-val" id="bj-wins">0</div>
+            </div>
+            <div class="bj-stat">
+              <div class="bj-stat-label">LOSSES</div>
+              <div class="bj-stat-val" id="bj-losses">0</div>
+            </div>
+          </div>
+
+          <div class="bj-zone-label">── DEALER ──</div>
+          <div class="bj-score-display" id="bj-dealer-score"></div>
+          <div class="bj-hand-area" id="bj-dealer-hand"></div>
+          <hr class="bj-divider">
+          <div class="bj-hand-area" id="bj-player-hand"></div>
+          <div class="bj-score-display" id="bj-player-score"></div>
+          <div class="bj-zone-label">── PLAYER ──</div>
+
+          <div id="bj-message" class="info">PLACE YOUR BET TO START</div>
+
+          <div class="bj-bet-section">
+            <span class="bj-bet-label">BET:</span>
+            <span class="bj-bet-val" id="bj-chips-val">$0</span>
+            <button class="chip-btn c5"   onclick="bjAddBet(5)"   id="bjc5">+5</button>
+            <button class="chip-btn c10"  onclick="bjAddBet(10)"  id="bjc10">+10</button>
+            <button class="chip-btn c25"  onclick="bjAddBet(25)"  id="bjc25">+25</button>
+            <button class="chip-btn c50"  onclick="bjAddBet(50)"  id="bjc50">+50</button>
+            <button class="chip-btn c100" onclick="bjAddBet(100)" id="bjc100">+100</button>
+            <button class="chip-btn c500" onclick="bjAddBet(500)" id="bjc500">+500</button>
+            <button class="bj-btn red-btn" onclick="bjClearBet()" id="bjClearBtn" style="font-size:7px;padding:6px 10px">CLR</button>
+          </div>
+
+          <div class="bj-controls">
+            <button class="bj-btn green-btn" onclick="bjDeal()"   id="bjDealBtn"><i class="fa-solid fa-play"></i> DEAL</button>
+            <button class="bj-btn"           onclick="bjHit()"    id="bjHitBtn"    disabled><i class="fa-solid fa-plus"></i> HIT</button>
+            <button class="bj-btn red-btn"   onclick="bjStand()"  id="bjStandBtn"  disabled><i class="fa-solid fa-hand"></i> STAND</button>
+            <button class="bj-btn purple-btn" onclick="bjDouble()" id="bjDoubleBtn" disabled><i class="fa-solid fa-arrow-up-right-dots"></i> DOUBLE</button>
+          </div>
+
+          <div class="bj-pixel-footer">≡ PRESS START 2P CASINO ≡ v2.0 ≡</div>
+        </div>
+
+      </div><!-- /gambling-panel -->
+    </div>
+
+  </div><!-- /center -->
+
+  <!-- RIGHT -->
+  <div id="right-panel">
+    <div class="section-title" style="margin-bottom:10px"><i class="fa-solid fa-chart-pie"></i> PORTFOLIO</div>
+    <div class="port-section">
+      <div class="port-row"><span class="port-label"><i class="fa-solid fa-wallet"></i> Cash</span><span class="port-value" id="port-cash">$0</span></div>
+      <div class="port-row"><span class="port-label"><i class="fa-solid fa-hand-pointer"></i> $/click</span><span class="port-value" id="port-cpc">$1</span></div>
+      <div class="port-row"><span class="port-label"><i class="fa-solid fa-clock"></i> $/sec</span><span class="port-value" id="port-aps">$0</span></div>
+      <div class="port-row"><span class="port-label"><i class="fa-solid fa-chart-line"></i> Stock val</span><span class="port-value" id="port-stocks">$0</span></div>
+      <div class="port-row"><span class="port-label"><i class="fa-solid fa-trophy"></i> Net worth</span><span class="port-value" id="port-net">$0</span></div>
+    </div>
+    <div class="section-title" style="margin-bottom:8px"><i class="fa-solid fa-building"></i> ASSETS OWNED</div>
+    <div id="port-assets" class="port-section"></div>
+    <div class="section-title" style="margin-bottom:8px"><i class="fa-solid fa-chart-bar"></i> STOCK HOLDINGS</div>
+    <div id="port-holdings" class="port-section"></div>
+    <div class="section-title" style="margin-bottom:8px"><i class="fa-solid fa-scroll"></i> ACTIVITY LOG</div>
+    <div id="log"></div>
+  </div>
+
+</div><!-- /main -->
+
+<script>
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+let money = 0, totalEarned = 0, clickPower = 1, perSecond = 0;
+
+// ── UPGRADES ──
+const upgrades = [
+  { id:'u1',  name:'LUCKY FINGERS',     desc:'+$1/click',    icon:'fa-hand-sparkles',       cost:25,      owned:0, effect(){ clickPower+=1; } },
+  { id:'u2',  name:'MONEY PRINTER',     desc:'+$0.5/sec',    icon:'fa-print',               cost:80,      owned:0, effect(){ perSecond+=0.5; } },
+  { id:'u3',  name:'GOLDEN TOUCH',      desc:'+$5/click',    icon:'fa-hand-holding-dollar',  cost:300,     owned:0, effect(){ clickPower+=5; } },
+  { id:'u4',  name:'AUTO-CLICKER',      desc:'+$2/sec',      icon:'fa-robot',               cost:500,     owned:0, effect(){ perSecond+=2; } },
+  { id:'u5',  name:'WALL STREET',       desc:'+$10/click',   icon:'fa-landmark',            cost:2000,    owned:0, effect(){ clickPower+=10; } },
+  { id:'u6',  name:'HEDGE FUND',        desc:'+$10/sec',     icon:'fa-briefcase',           cost:5000,    owned:0, effect(){ perSecond+=10; } },
+  { id:'u7',  name:'DIAMOND HANDS',     desc:'+$50/click',   icon:'fa-gem',                 cost:15000,   owned:0, effect(){ clickPower+=50; } },
+  { id:'u8',  name:'QUANT AI',          desc:'+$50/sec',     icon:'fa-microchip',           cost:40000,   owned:0, effect(){ perSecond+=50; } },
+  { id:'u9',  name:'FED CHAIR',         desc:'+$200/click',  icon:'fa-university',          cost:150000,  owned:0, effect(){ clickPower+=200; } },
+  { id:'u10', name:'MONEY SINGULARITY', desc:'+$500/sec',    icon:'fa-infinity',            cost:500000,  owned:0, effect(){ perSecond+=500; } },
+];
+
+// ── ASSETS ──
+const assets = [
+  { id:'a1',  icon:'fa-bicycle',   name:'BIKE COURIER',  baseCost:100,      baseIncome:0.5,   owned:0 },
+  { id:'a2',  icon:'fa-store',     name:'CORNER STORE',  baseCost:500,      baseIncome:2,     owned:0 },
+  { id:'a3',  icon:'fa-car',       name:'TAXI CAB',      baseCost:1200,     baseIncome:5,     owned:0 },
+  { id:'a4',  icon:'fa-utensils',  name:'PIZZA SHOP',    baseCost:4000,     baseIncome:15,    owned:0 },
+  { id:'a5',  icon:'fa-house',     name:'RENTAL HOUSE',  baseCost:12000,    baseIncome:40,    owned:0 },
+  { id:'a6',  icon:'fa-industry',  name:'FACTORY',       baseCost:40000,    baseIncome:120,   owned:0 },
+  { id:'a7',  icon:'fa-building',  name:'OFFICE TOWER',  baseCost:150000,   baseIncome:400,   owned:0 },
+  { id:'a8',  icon:'fa-oil-well',  name:'OIL WELL',      baseCost:500000,   baseIncome:1200,  owned:0 },
+  { id:'a9',  icon:'fa-rocket',    name:'SPACE VENTURE', baseCost:2000000,  baseIncome:5000,  owned:0 },
+  { id:'a10', icon:'fa-globe',     name:'TECH EMPIRE',   baseCost:10000000, baseIncome:25000, owned:0 },
+];
+
+// ── STOCKS (12 stocks) ──
+const stockData = [
+  { ticker:'DOGE', name:'Dogecoin Corp',      price:10,   shares:0, value:0, history:[], color:'#f0c040', trend:0, vol:0.07 },
+  { ticker:'MOON', name:'Moon Capital',       price:50,   shares:0, value:0, history:[], color:'#9988ff', trend:0, vol:0.06 },
+  { ticker:'CASH', name:'Cashflow Inc',       price:100,  shares:0, value:0, history:[], color:'#00ff41', trend:0, vol:0.04 },
+  { ticker:'NRGY', name:'NRG Energy',         price:75,   shares:0, value:0, history:[], color:'#ff8800', trend:0, vol:0.05 },
+  { ticker:'APEX', name:'Apex Tech',          price:200,  shares:0, value:0, history:[], color:'#00cfff', trend:0, vol:0.05 },
+  { ticker:'BNKR', name:'Banker Trust',       price:150,  shares:0, value:0, history:[], color:'#ffcc44', trend:0, vol:0.03 },
+  { ticker:'GRWL', name:'Growl Media',        price:35,   shares:0, value:0, history:[], color:'#ff6688', trend:0, vol:0.08 },
+  { ticker:'ZINC', name:'Zinc Minerals',      price:60,   shares:0, value:0, history:[], color:'#88ddaa', trend:0, vol:0.05 },
+  { ticker:'NOVA', name:'Nova Aerospace',     price:300,  shares:0, value:0, history:[], color:'#dd88ff', trend:0, vol:0.06 },
+  { ticker:'CRYP', name:'Crypto Vault Inc',   price:420,  shares:0, value:0, history:[], color:'#ff9933', trend:0, vol:0.10 },
+  { ticker:'FARM', name:'FarmChain Co',       price:25,   shares:0, value:0, history:[], color:'#aaffaa', trend:0, vol:0.04 },
+  { ticker:'DRIV', name:'AutoDrive Systems',  price:180,  shares:0, value:0, history:[], color:'#44ccff', trend:0, vol:0.05 },
+];
+stockData.forEach(s => { for(let i=0;i<25;i++) s.history.push(s.price); s.value = s.price; });
+
+// ══════════════════════════════════════════════
+//  HELPERS
+// ══════════════════════════════════════════════
+function fmt(n) {
+  if(n>=1e12) return '$'+(n/1e12).toFixed(2)+'T';
+  if(n>=1e9)  return '$'+(n/1e9).toFixed(2)+'B';
+  if(n>=1e6)  return '$'+(n/1e6).toFixed(2)+'M';
+  if(n>=1e3)  return '$'+(n/1e3).toFixed(2)+'K';
+  return '$'+n.toFixed(2);
+}
+function addLog(msg, type='', icon='fa-circle-info') {
+  const log = document.getElementById('log');
+  const el = document.createElement('div');
+  el.className = 'log-entry '+type;
+  el.innerHTML = `<i class="fa-solid ${icon}"></i><span>${msg}</span>`;
+  log.prepend(el);
+  while(log.children.length > 60) log.removeChild(log.lastChild);
+}
+function setVal(id, v) { document.getElementById(id).value = v; }
+function stepInput(id, delta) {
+  const el = document.getElementById(id);
+  el.value = Math.max(1, (parseFloat(el.value)||0) + delta);
+}
+
+// ══════════════════════════════════════════════
+//  CLICKER
+// ══════════════════════════════════════════════
+function clickMoney(e) {
+  money += clickPower; totalEarned += clickPower;
+  updateDisplay();
+  spawnFloat(e.clientX, e.clientY, '+'+fmt(clickPower));
+}
+function spawnFloat(x, y, txt) {
+  const el = document.createElement('div');
+  el.className = 'float-coin';
+  el.innerHTML = `<i class="fa-solid fa-dollar-sign"></i>${txt}`;
+  el.style.cssText = `left:${x-20}px;top:${y-10}px`;
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(), 950);
+}
+
+// ══════════════════════════════════════════════
+//  UPGRADES
+// ══════════════════════════════════════════════
+function renderUpgrades() {
+  const list = document.getElementById('upgrades-list');
+  list.innerHTML = '';
+  upgrades.forEach(u => {
+    const cost = Math.floor(u.cost * Math.pow(1.5, u.owned));
+    const el = document.createElement('div');
+    el.className = 'upgrade-item'+(money<cost?' unaffordable':'');
+    el.innerHTML = `
+      <div class="upg-left">
+        <div class="upg-name"><i class="fa-solid ${u.icon}" style="margin-right:5px;font-size:11px"></i>${u.name}</div>
+        <div class="upg-desc">${u.desc}</div>
+        <div class="upg-owned">Owned: ${u.owned}</div>
+      </div>
+      <div class="upg-cost">${fmt(cost)}</div>`;
+    el.onclick = ()=>buyUpgrade(u);
+    list.appendChild(el);
+  });
+}
+function buyUpgrade(u) {
+  const cost = Math.floor(u.cost * Math.pow(1.5, u.owned));
+  if(money<cost) return;
+  money-=cost; u.owned++; u.effect();
+  addLog(`Bought: ${u.name}`,'good','fa-circle-check');
+  renderUpgrades(); updateDisplay();
+}
+
+// ══════════════════════════════════════════════
+//  ASSETS
+// ══════════════════════════════════════════════
+function getAssetCost(a) { return Math.floor(a.baseCost*Math.pow(1.15,a.owned)); }
+function getAssetIncome(a) { return a.baseIncome*a.owned; }
+
+function renderAssets() {
+  const grid = document.getElementById('assets-grid');
+  grid.innerHTML = '';
+  assets.forEach(a => {
+    const cost = getAssetCost(a);
+    const el = document.createElement('div');
+    el.className = 'asset-card'+(money<cost?' unaffordable':'');
+    el.innerHTML = `
+      <div class="asset-icon"><i class="fa-solid ${a.icon}"></i></div>
+      <div class="asset-name">${a.name}</div>
+      <div class="asset-income"><i class="fa-solid fa-clock" style="font-size:11px"></i> +${fmt(a.baseIncome)}/sec ea</div>
+      <div class="asset-cost"><i class="fa-solid fa-tag" style="font-size:11px"></i> ${fmt(cost)}</div>
+      <div class="asset-owned-count"><i class="fa-solid fa-layer-group" style="font-size:11px"></i> x${a.owned} = ${fmt(getAssetIncome(a))}/s</div>`;
+    el.onclick = ()=>buyAsset(a);
+    grid.appendChild(el);
+  });
+  const pa = document.getElementById('port-assets');
+  pa.innerHTML = '';
+  assets.filter(a=>a.owned>0).forEach(a => {
+    const el = document.createElement('div');
+    el.className = 'port-row';
+    el.innerHTML = `<span class="port-label"><i class="fa-solid ${a.icon}"></i> ${a.name} x${a.owned}</span><span class="port-value">${fmt(getAssetIncome(a))}/s</span>`;
+    pa.appendChild(el);
+  });
+}
+function buyAsset(a) {
+  const cost = getAssetCost(a);
+  if(money<cost) return;
+  money-=cost; a.owned++; perSecond+=a.baseIncome;
+  addLog(`Bought: ${a.name} #${a.owned}`,'good','fa-building');
+  renderAssets(); updateDisplay();
+}
+
+// ══════════════════════════════════════════════
+//  STOCKS
+// ══════════════════════════════════════════════
+function renderStocks() {
+  const panel = document.getElementById('stocks-panel');
+  panel.innerHTML = '';
+  stockData.forEach((s, i) => {
+    const prev = s.history[s.history.length-2] || s.price;
+    const chg = s.price - prev;
+    const pct = prev>0 ? (chg/prev*100) : 0;
+    const isUp = chg >= 0;
+    const inputId = `invest-${s.ticker}`;
+    const row = document.createElement('div');
+    row.className = 'stock-row';
+    const cid = `chart-${s.ticker}`;
+
+    // How many whole shares the current invest amount can buy
+    row.innerHTML = `
+      <div class="stock-top">
+        <div>
+          <div class="stock-ticker">${s.ticker}</div>
+          <div class="stock-company">${s.name}</div>
+          <div class="stock-holding"><i class="fa-solid fa-layer-group" style="font-size:10px"></i> ${s.shares} shares &mdash; ${fmt(s.shares*s.price)}</div>
+        </div>
+        <canvas id="${cid}" class="stock-chart-mini" height="32"></canvas>
+        <div class="stock-price" style="color:${s.color}">${fmt(s.price)}<br><span style="font-size:12px;color:var(--dim)">per share</span></div>
+        <div class="stock-change ${isUp?'up':'down'}">
+          <i class="fa-solid ${isUp?'fa-caret-up':'fa-caret-down'}"></i> ${Math.abs(pct).toFixed(1)}%
+        </div>
+      </div>
+      <div class="stock-invest-row">
+        <label>INVEST:</label>
+        <div class="retro-num-wrap">
+          <input type="number" id="${inputId}" value="${Math.max(1,Math.floor(s.price))}" min="1">
+          <div class="retro-arrows">
+            <button onclick="stepInput('${inputId}',${Math.max(1,Math.floor(s.price))})">▲</button>
+            <button onclick="stepInput('${inputId}',-${Math.max(1,Math.floor(s.price))})">▼</button>
+          </div>
+        </div>
+        <div class="stock-presets">
+          <button class="preset-btn" onclick="setStockInvest('${inputId}',${s.price},1)">1x</button>
+          <button class="preset-btn" onclick="setStockInvest('${inputId}',${s.price},5)">5x</button>
+          <button class="preset-btn" onclick="setStockInvest('${inputId}',${s.price},10)">10x</button>
+          <button class="preset-btn" onclick="setStockInvestAll('${inputId}',${s.price})">MAX</button>
+        </div>
+        <button class="stock-btn buy-btn" onclick="buyStock(${i},'${inputId}')"><i class="fa-solid fa-plus"></i> BUY</button>
+        <button class="stock-btn sell-btn" onclick="sellStock(${i},'${inputId}')"><i class="fa-solid fa-minus"></i> SELL</button>
+        <span id="shares-preview-${s.ticker}" style="font-size:12px;color:var(--dim)"></span>
+      </div>`;
+    panel.appendChild(row);
+    requestAnimationFrame(()=>drawMiniChart(cid, s));
+
+    // live preview of shares count
+    setTimeout(()=>{
+      const inp = document.getElementById(inputId);
+      const updatePreview = ()=>{
+        const shares = Math.floor((parseFloat(inp.value)||0)/s.price);
+        const el = document.getElementById(`shares-preview-${s.ticker}`);
+        if(el) el.textContent = shares > 0 ? `≈ ${shares} share${shares!==1?'s':''}` : '';
+      };
+      if(inp){ inp.addEventListener('input', updatePreview); updatePreview(); }
+    }, 50);
+  });
+
+  // portfolio holdings
+  const ph = document.getElementById('port-holdings');
+  ph.innerHTML = '';
+  stockData.filter(s=>s.shares>0).forEach(s=>{
+    const el = document.createElement('div');
+    el.className = 'port-row';
+    el.innerHTML = `<span class="port-label"><i class="fa-solid fa-chart-line"></i> ${s.ticker} x${s.shares}</span><span class="port-value" style="color:${s.color}">${fmt(s.shares*s.price)}</span>`;
+    ph.appendChild(el);
+  });
+}
+
+function setStockInvest(inputId, price, qty) {
+  document.getElementById(inputId).value = Math.ceil(price * qty);
+  const s = stockData.find(st=>`invest-${st.ticker}`===inputId);
+  if(s){ const el=document.getElementById(`shares-preview-${s.ticker}`); if(el) el.textContent=`≈ ${qty} share${qty!==1?'s':''}`; }
+}
+function setStockInvestAll(inputId, price) {
+  const qty = Math.floor(money / price);
+  if(qty < 1){ addLog('Not enough cash!','bad','fa-circle-xmark'); return; }
+  document.getElementById(inputId).value = Math.floor(money);
+}
+
+function drawMiniChart(id, s) {
+  const canvas = document.getElementById(id);
+  if(!canvas) return;
+  canvas.width = canvas.offsetWidth || 120; canvas.height = 32;
+  const ctx = canvas.getContext('2d');
+  const data = s.history.slice(-25);
+  const w = canvas.width, h = canvas.height;
+  const mn = Math.min(...data)*0.97, mx = Math.max(...data)*1.03;
+  ctx.clearRect(0,0,w,h);
+  ctx.beginPath();
+  data.forEach((v,i)=>{
+    const x=(i/(data.length-1))*w, y=h-((v-mn)/(mx-mn+0.001))*h;
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  });
+  ctx.strokeStyle=s.color; ctx.lineWidth=1.5; ctx.stroke();
+}
+
+function buyStock(i, inputId) {
+  const s = stockData[i];
+  const investAmt = parseFloat(document.getElementById(inputId).value)||0;
+  if(investAmt<=0){ addLog('Enter an amount!','bad','fa-circle-xmark'); return; }
+  const sharesToBuy = Math.floor(investAmt / s.price);
+  if(sharesToBuy<1){ addLog('Not enough for 1 share of '+s.ticker,'bad','fa-circle-xmark'); return; }
+  const totalCost = sharesToBuy * s.price;
+  if(money<totalCost){ addLog('Not enough cash!','bad','fa-circle-xmark'); return; }
+  money -= totalCost; s.shares += sharesToBuy;
+  addLog(`Bought ${sharesToBuy}x ${s.ticker} @ ${fmt(s.price)} = ${fmt(totalCost)}`,'good','fa-chart-line');
+  renderStocks(); updateDisplay();
+}
+
+function sellStock(i, inputId) {
+  const s = stockData[i];
+  if(s.shares<=0){ addLog('No shares to sell!','bad','fa-circle-xmark'); return; }
+  const investAmt = parseFloat(document.getElementById(inputId).value)||0;
+  const sharesToSell = Math.min(s.shares, Math.max(1, Math.floor(investAmt / s.price)));
+  const proceeds = sharesToSell * s.price;
+  money += proceeds; s.shares -= sharesToSell;
+  addLog(`Sold ${sharesToSell}x ${s.ticker} @ ${fmt(s.price)} = ${fmt(proceeds)}`,'info','fa-chart-line');
+  renderStocks(); updateDisplay();
+}
+
+function tickStocks() {
+  stockData.forEach(s=>{
+    if(Math.random()<0.12) s.trend=(Math.random()-0.5)*0.05;
+    const change=(Math.random()-0.48+s.trend)*s.vol;
+    s.price=Math.max(0.01, s.price*(1+change));
+    s.history.push(s.price);
+    if(s.history.length>60) s.history.shift();
+  });
+  if(document.getElementById('tab-stocks').classList.contains('active')) renderStocks();
+}
+
+// ══════════════════════════════════════════════
+//  SLOTS
+// ══════════════════════════════════════════════
+const SLOT_ICONS = ['fa-cherry','fa-lemon','fa-apple-whole','fa-bell','fa-gem','fa-7','fa-dollar-sign','fa-star'];
+const SLOT_COMBOS = [
+  {icons:['fa-dollar-sign','fa-dollar-sign','fa-dollar-sign'],mult:50},
+  {icons:['fa-7','fa-7','fa-7'],mult:25},
+  {icons:['fa-gem','fa-gem','fa-gem'],mult:15},
+  {icons:['fa-bell','fa-bell','fa-bell'],mult:10},
+  {icons:['fa-star','fa-star','fa-star'],mult:8},
+  {icons:['fa-apple-whole','fa-apple-whole','fa-apple-whole'],mult:5},
+  {icons:['fa-lemon','fa-lemon','fa-lemon'],mult:4},
+  {icons:['fa-cherry','fa-cherry','fa-cherry'],mult:3},
+];
+let slotSpinning = false;
+
+function setReelIcon(id, cls) { document.getElementById(id).innerHTML=`<i class="fa-solid ${cls}"></i>`; }
+
+function spinSlots() {
+  if(slotSpinning) return;
+  const bet = parseFloat(document.getElementById('slot-bet').value);
+  if(isNaN(bet)||bet<=0||money<bet){ setSlotMsg('<i class="fa-solid fa-circle-xmark"></i> Not enough cash!','lose-msg'); return; }
+  money-=bet; slotSpinning=true;
+  setSlotMsg('<i class="fa-solid fa-rotate fa-spin"></i> Spinning...','push-msg');
+  ['r1','r2','r3'].forEach(r=>document.getElementById(r).classList.add('spinning'));
+  let sp=0;
+  const iv=setInterval(()=>{
+    ['r1','r2','r3'].forEach(r=>setReelIcon(r,SLOT_ICONS[Math.floor(Math.random()*SLOT_ICONS.length)]));
+    if(++sp>16){
+      clearInterval(iv);
+      ['r1','r2','r3'].forEach(r=>document.getElementById(r).classList.remove('spinning'));
+      const result=['r1','r2','r3'].map(r=>document.getElementById(r).querySelector('i').className.replace('fa-solid ','').trim());
+      let mult=0;
+      for(const c of SLOT_COMBOS){ if(result[0]===c.icons[0]&&result[1]===c.icons[1]&&result[2]===c.icons[2]){mult=c.mult;break;} }
+      if(!mult&&result[0]===result[1]) mult=1.5;
+      if(!mult&&result[1]===result[2]) mult=1.5;
+      if(!mult&&result[0]===result[2]) mult=1.2;
+      const won=bet*mult;
+      if(mult>0){
+        money+=won; totalEarned+=(won-bet);
+        setSlotMsg(`<i class="fa-solid fa-trophy"></i> WIN! x${mult} = ${fmt(won)}!`,'win-msg');
+        addLog(`Slots WIN x${mult}: +${fmt(won-bet)}`,'good','fa-trophy');
+      } else {
+        setSlotMsg(`<i class="fa-solid fa-xmark"></i> No match — Lost ${fmt(bet)}`,'lose-msg');
+        addLog(`Slots loss: -${fmt(bet)}`,'bad','fa-xmark');
+      }
+      slotSpinning=false; updateDisplay();
+    }
+  },75);
+}
+function setSlotMsg(html,cls){ const el=document.getElementById('slot-result'); el.className='result-msg '+cls; el.innerHTML=html; }
+
+// ══════════════════════════════════════════════
+//  COIN FLIP
+// ══════════════════════════════════════════════
+let coinFlipping=false;
+function flipCoin(choice){
+  if(coinFlipping) return;
+  const bet=parseFloat(document.getElementById('coin-bet').value);
+  if(isNaN(bet)||bet<=0||money<bet){ const e=document.getElementById('coin-result'); e.className='result-msg lose-msg'; e.innerHTML='Not enough!'; return; }
+  money-=bet; coinFlipping=true;
+  const d=document.getElementById('coin-display');
+  let f=0;
+  const iv=setInterval(()=>{
+    d.innerHTML=f%2===0?'<i class="fa-solid fa-circle-dollar-to-slot"></i>':'<i class="fa-solid fa-circle"></i>';
+    f++;
+    if(f>10){
+      clearInterval(iv);
+      const result=Math.random()<0.5?'heads':'tails';
+      d.innerHTML=result==='heads'?'<i class="fa-solid fa-circle-dollar-to-slot"></i>':'<i class="fa-regular fa-circle"></i>';
+      const el=document.getElementById('coin-result');
+      if(result===choice){ money+=bet*2; totalEarned+=bet; el.className='result-msg win-msg'; el.innerHTML=`<i class="fa-solid fa-check"></i> ${result.toUpperCase()}! WIN! +${fmt(bet)}`; addLog(`Coin WIN: +${fmt(bet)}`,'good','fa-coins'); }
+      else { el.className='result-msg lose-msg'; el.innerHTML=`<i class="fa-solid fa-xmark"></i> ${result.toUpperCase()}! LOSE! -${fmt(bet)}`; addLog(`Coin loss: -${fmt(bet)}`,'bad','fa-coins'); }
+      coinFlipping=false; updateDisplay();
+    }
+  },80);
+}
+
+// ══════════════════════════════════════════════
+//  BLACKJACK — pixel casino style
+// ══════════════════════════════════════════════
+const BJ_SUITS = ['♠','♣','♥','♦'];
+const BJ_VALS  = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+let bjDeck=[], bjPlayerHand=[], bjDealerHand=[], bjBet=0, bjGameActive=false;
+let bjWins=0, bjLosses=0;
+
+function bjBuildDeck(){
+  bjDeck=[];
+  for(let s of BJ_SUITS) for(let v of BJ_VALS) bjDeck.push({suit:s,value:v});
+  for(let i=bjDeck.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [bjDeck[i],bjDeck[j]]=[bjDeck[j],bjDeck[i]]; }
+}
+
+function bjCardVal(c){ if(['J','Q','K'].includes(c.value)) return 10; if(c.value==='A') return 11; return parseInt(c.value); }
+
+function bjHandScore(hand){
+  let s=0,ac=0;
+  for(let c of hand){ s+=bjCardVal(c); if(c.value==='A') ac++; }
+  while(s>21&&ac>0){ s-=10; ac--; }
+  return s;
+}
+
+function bjIsRed(c){ return c.suit==='♥'||c.suit==='♦'; }
+
+function bjRenderCard(c, hidden=false){
+  const div=document.createElement('div');
+  div.className=hidden?'bj-card hidden':`bj-card ${bjIsRed(c)?'red':'black'}`;
+  if(!hidden){
+    div.innerHTML=`
+      <div class="bj-corner tl">${c.value}<br>${c.suit}</div>
+      <div class="bj-suit-center">${c.suit}</div>
+      <div class="bj-corner br">${c.value}<br>${c.suit}</div>`;
+  }
+  return div;
+}
+
+function bjRenderHand(hand, elId, hideSecond=false){
+  const el=document.getElementById(elId);
+  el.innerHTML='';
+  hand.forEach((c,i)=>el.appendChild(bjRenderCard(c, hideSecond&&i===1)));
+}
+
+function bjSetMsg(txt, cls=''){
+  const el=document.getElementById('bj-message');
+  el.textContent=txt; el.className=cls;
+}
+
+function bjUpdateUI(){
+  document.getElementById('bj-bet-display').textContent='$'+bjBet;
+  document.getElementById('bj-chips-val').textContent='$'+bjBet;
+  document.getElementById('bj-wins').textContent=bjWins;
+  document.getElementById('bj-losses').textContent=bjLosses;
+}
+
+function bjSetButtons(playing){
+  document.getElementById('bjDealBtn').disabled=playing;
+  document.getElementById('bjHitBtn').disabled=!playing;
+  document.getElementById('bjStandBtn').disabled=!playing;
+  document.getElementById('bjDoubleBtn').disabled=!playing;
+  ['bjc5','bjc10','bjc25','bjc50','bjc100','bjc500','bjClearBtn'].forEach(id=>{
+    document.getElementById(id).disabled=playing;
+  });
+}
+
+function bjAddBet(amt){
+  if(bjGameActive) return;
+  if(bjBet+amt>money){ bjSetMsg('NOT ENOUGH CREDITS!','lose'); return; }
+  bjBet+=amt; bjUpdateUI(); bjSetMsg('PLACE YOUR BET TO START','info');
+}
+
+function bjClearBet(){ if(bjGameActive) return; bjBet=0; bjUpdateUI(); }
+
+function bjDeal(){
+  if(bjBet===0){ bjSetMsg('PLACE A BET FIRST!','lose'); return; }
+  if(bjDeck.length<15) bjBuildDeck();
+  money-=bjBet; bjGameActive=true;
+  bjPlayerHand=[bjDeck.pop(),bjDeck.pop()];
+  bjDealerHand=[bjDeck.pop(),bjDeck.pop()];
+  bjRenderHand(bjPlayerHand,'bj-player-hand');
+  bjRenderHand(bjDealerHand,'bj-dealer-hand',true);
+  document.getElementById('bj-dealer-score').textContent='?';
+  bjUpdatePlayerScore();
+  bjUpdateUI(); bjSetButtons(true); bjSetMsg('HIT OR STAND?','info');
+  updateDisplay();
+  if(bjHandScore(bjPlayerHand)===21){ bjRevealDealer(); setTimeout(()=>bjEndGame(),600); }
+}
+
+function bjUpdatePlayerScore(){
+  const s=bjHandScore(bjPlayerHand);
+  document.getElementById('bj-player-score').textContent='SCORE: '+s+(s>21?' BUST!':'');
+}
+
+function bjRevealDealer(){
+  bjRenderHand(bjDealerHand,'bj-dealer-hand');
+  document.getElementById('bj-dealer-score').textContent='SCORE: '+bjHandScore(bjDealerHand);
+}
+
+function bjHit(){
+  if(!bjGameActive) return;
+  bjPlayerHand.push(bjDeck.pop());
+  bjRenderHand(bjPlayerHand,'bj-player-hand');
+  bjUpdatePlayerScore();
+  document.getElementById('bjDoubleBtn').disabled=true;
+  const s=bjHandScore(bjPlayerHand);
+  if(s>21){ bjRevealDealer(); setTimeout(()=>bjEndGame(),400); }
+  else if(s===21){ bjStand(); }
+}
+
+function bjStand(){
+  if(!bjGameActive) return;
+  bjSetButtons(false);
+  bjRevealDealer();
+  const drawDealer=()=>{
+    const s=bjHandScore(bjDealerHand);
+    document.getElementById('bj-dealer-score').textContent='SCORE: '+s;
+    if(s<17){ bjDealerHand.push(bjDeck.pop()); bjRenderHand(bjDealerHand,'bj-dealer-hand'); setTimeout(drawDealer,350); }
+    else { setTimeout(()=>bjEndGame(),300); }
+  };
+  setTimeout(drawDealer,400);
+}
+
+function bjDouble(){
+  if(!bjGameActive) return;
+  if(bjBet>money){ bjSetMsg('NOT ENOUGH CREDITS!','lose'); return; }
+  money-=bjBet; bjBet*=2; bjUpdateUI(); updateDisplay();
+  bjPlayerHand.push(bjDeck.pop());
+  bjRenderHand(bjPlayerHand,'bj-player-hand');
+  bjUpdatePlayerScore();
+  const s=bjHandScore(bjPlayerHand);
+  if(s>21){ bjRevealDealer(); setTimeout(()=>bjEndGame(),400); }
+  else { bjStand(); }
+}
+
+function bjEndGame(){
+  bjGameActive=false; bjSetButtons(false);
+  const ps=bjHandScore(bjPlayerHand), ds=bjHandScore(bjDealerHand);
+  const pBJ=ps===21&&bjPlayerHand.length===2, dBJ=ds===21&&bjDealerHand.length===2;
+  let result='', gain=0;
+  if(ps>21){
+    result='lose'; bjLosses++;
+    bjSetMsg('▼ BUST! YOU LOSE ▼','lose'); gain=-bjBet;
+    addLog(`BJ: Bust — Lost ${fmt(bjBet)}`,'bad','fa-burst');
+  } else if(ds>21){
+    result='win'; bjWins++;
+    const payout=pBJ?Math.floor(bjBet*2.5):bjBet*2;
+    money+=payout; totalEarned+=(payout-bjBet); gain=payout-bjBet;
+    bjSetMsg('★ DEALER BUSTS! YOU WIN $'+payout+' ★','win');
+    addLog(`BJ: Dealer busts +${fmt(payout)}`,'good','fa-star');
+  } else if(pBJ&&!dBJ){
+    result='win'; bjWins++;
+    const payout=Math.floor(bjBet*2.5);
+    money+=payout; totalEarned+=(payout-bjBet); gain=payout-bjBet;
+    bjSetMsg('★ BLACKJACK! WIN $'+payout+' ★','win');
+    addLog(`BJ: Blackjack! +${fmt(payout)}`,'good','fa-star');
+  } else if(dBJ&&!pBJ){
+    result='lose'; bjLosses++;
+    bjSetMsg('▼ DEALER BLACKJACK! ▼','lose'); gain=-bjBet;
+    addLog(`BJ: Dealer BJ — Lost ${fmt(bjBet)}`,'bad','fa-xmark');
+  } else if(ps>ds){
+    result='win'; bjWins++;
+    money+=bjBet*2; totalEarned+=bjBet; gain=bjBet;
+    bjSetMsg('★ YOU WIN $'+(bjBet*2)+'! ★','win');
+    addLog(`BJ: Win +${fmt(bjBet)}`,'good','fa-circle-check');
+  } else if(ds>ps){
+    result='lose'; bjLosses++;
+    bjSetMsg('▼ DEALER WINS ▼','lose'); gain=-bjBet;
+    addLog(`BJ: Lose -${fmt(bjBet)}`,'bad','fa-xmark');
+  } else {
+    money+=bjBet;
+    bjSetMsg('◆ PUSH — BET RETURNED ◆','push'); gain=0;
+    addLog('BJ: Push — bet returned','info','fa-handshake');
+  }
+  if(result==='win'){ const p=document.getElementById('bj-panel'); p.classList.add('win-flash'); setTimeout(()=>p.classList.remove('win-flash'),1200); }
+  bjBet=0; bjUpdateUI(); updateDisplay();
+  if(money<=0){ setTimeout(()=>{ bjSetMsg('GAME OVER!','lose'); },800); }
+  else { document.getElementById('bjDealBtn').disabled=false; }
+}
+
+// ══════════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════════
+function switchTab(name, btn){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+  if(name==='stocks') renderStocks();
+  if(name==='assets') renderAssets();
+}
+
+// ══════════════════════════════════════════════
+//  DISPLAY
+// ══════════════════════════════════════════════
+function updateDisplay(){
+  document.getElementById('money-display').textContent=fmt(money);
+  document.getElementById('per-second-display').textContent=fmt(perSecond)+' / sec';
+  document.getElementById('total-earned-display').textContent='Total: '+fmt(totalEarned);
+  document.getElementById('click-value').innerHTML=`<i class="fa-solid fa-hand-pointer" style="font-size:11px;margin-right:4px"></i>+${fmt(clickPower)} per click`;
+  document.getElementById('port-cash').textContent=fmt(money);
+  document.getElementById('port-cpc').textContent=fmt(clickPower);
+  document.getElementById('port-aps').textContent=fmt(perSecond)+'/s';
+  const sv=stockData.reduce((a,s)=>a+s.shares*s.price,0);
+  document.getElementById('port-stocks').textContent=fmt(sv);
+  document.getElementById('port-net').textContent=fmt(money+sv);
+  renderUpgrades(); renderAssets();
+}
+
+// ══════════════════════════════════════════════
+//  GAME LOOP
+// ══════════════════════════════════════════════
+let lastTick=Date.now(), stockTick=0;
+function gameLoop(){
+  const now=Date.now(), dt=(now-lastTick)/1000; lastTick=now;
+  const g=perSecond*dt; money+=g; totalEarned+=g;
+  stockTick+=dt;
+  if(stockTick>3){ tickStocks(); stockTick=0; }
+  updateDisplay();
+}
+
+// ══════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════
+bjBuildDeck();
+bjUpdateUI();
+renderUpgrades(); renderAssets(); renderStocks(); updateDisplay();
+setInterval(gameLoop, 100);
+addLog('Welcome to Cash Empire! Click to start earning.','good','fa-circle-check');
+</script>
+</body>
+</html>
